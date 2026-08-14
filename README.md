@@ -18,8 +18,10 @@ Uma plataforma simples e elegante para organizar e disponibilizar conteúdo educ
 ## ⚙️ Requisitos
 
 - **Python 3.6+** (para rodar o servidor e gerar o catálogo)
-- **Google Chrome** (recomendado) ou outro navegador moderno
-- Windows 7+ ou qualquer SO com Python instalado
+- Navegador moderno (Chrome, Firefox, Edge, Safari, etc.)
+- **Multiplataforma**: Windows, Mac, Linux
+
+**Portabilidade**: Funciona em qualquer máquina, qualquer pasta, qualquer usuário. Sem caminhos fixos!
 
 ---
 

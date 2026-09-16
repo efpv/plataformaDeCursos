@@ -3,7 +3,6 @@ let ARVORE = {};
 let caminhoAtual = [];
 let emPlayer = null;
 let timerAutoAvancoGlobal = null;
-let timerTranscricaoGlobal = null;
 
 // ---------- Progresso (salvo em progresso.json no servidor local; localStorage como reserva) ----------
 const CHAVE_PROGRESSO = 'auvp_progresso_v1';
@@ -157,19 +156,16 @@ function contarEpisodios(node){
 
 function irParaInicio(){
   clearInterval(timerAutoAvancoGlobal);
-  clearInterval(timerTranscricaoGlobal);
   emPlayer = null; caminhoAtual = []; render();
 }
 
 function irPara(caminho){
   clearInterval(timerAutoAvancoGlobal);
-  clearInterval(timerTranscricaoGlobal);
   emPlayer = null; caminhoAtual = caminho; render();
 }
 
 function abrirEpisodio(caminho){
   clearInterval(timerAutoAvancoGlobal);
-  clearInterval(timerTranscricaoGlobal);
   emPlayer = caminho;
   render();
 }
@@ -364,78 +360,6 @@ function cardEpisodio(arquivo, idx){
   return card;
 }
 
-// Convenção: a transcrição de "Aula 1.mp4" fica em "Aula 1.txt", na mesma pasta do vídeo
-// (mesma ideia do progresso.json: um arquivo auxiliar ao lado do conteúdo original).
-function caminhoTranscricao(caminhoArquivo){
-  const pasta = caminhoArquivo.slice(0, -1);
-  const nomeArquivo = caminhoArquivo[caminhoArquivo.length - 1].replace(/\.[^.]+$/, '.txt');
-  return [...pasta, nomeArquivo];
-}
-
-function renderPainelTranscricao(caminhoArquivo){
-  const painel = document.createElement('div');
-  painel.className = 'painel-transcricao';
-  painel.innerHTML = `
-    <div class="transcricao-titulo">Transcrição</div>
-    <div class="transcricao-corpo">Carregando…</div>
-  `;
-  const corpoEl = painel.querySelector('.transcricao-corpo');
-  const srcTranscricao = caminhoTranscricao(caminhoArquivo).map(encodeURIComponent).join('/');
-
-  // Busca o .txt; quem chama decide o que fazer se ainda não existir (throw = "não existe")
-  function tentarCarregar(){
-    return fetch(srcTranscricao, { cache: 'no-store' }).then(resp => {
-      if(!resp.ok) throw new Error('sem transcrição');
-      return resp.text();
-    });
-  }
-
-  function mostrarTexto(texto){
-    corpoEl.classList.remove('transcricao-ausente');
-    corpoEl.textContent = texto.trim() || 'Transcrição vazia.';
-  }
-
-  function mostrarBotaoGerar(){
-    corpoEl.classList.add('transcricao-ausente');
-    corpoEl.innerHTML = 'Transcrição ainda não gerada para esta aula.<br>' +
-      '<button type="button" class="btn-gerar-transcricao">Gerar transcrição</button>';
-    corpoEl.querySelector('.btn-gerar-transcricao').onclick = solicitarTranscricao;
-  }
-
-  function aguardarConclusao(){
-    corpoEl.classList.remove('transcricao-ausente');
-    corpoEl.textContent = 'Gerando transcrição... isso pode levar alguns minutos.';
-    clearInterval(timerTranscricaoGlobal);
-    timerTranscricaoGlobal = setInterval(() => {
-      tentarCarregar()
-        .then(texto => { clearInterval(timerTranscricaoGlobal); mostrarTexto(texto); })
-        .catch(() => { /* ainda não terminou, tenta de novo no próximo tick */ });
-    }, 5000);
-  }
-
-  function solicitarTranscricao(){
-    corpoEl.classList.remove('transcricao-ausente');
-    corpoEl.textContent = 'Solicitando transcrição ao servidor local...';
-    fetch('/transcrever', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ caminho: caminhoArquivo })
-    })
-      .then(resp => resp.json())
-      .then(({ status }) => {
-        if(status === 'pronta') tentarCarregar().then(mostrarTexto).catch(mostrarBotaoGerar);
-        else aguardarConclusao();
-      })
-      .catch(() => {
-        corpoEl.textContent = 'Não consegui pedir a transcrição (o servidor local respondeu?).';
-      });
-  }
-
-  tentarCarregar().then(mostrarTexto).catch(mostrarBotaoGerar);
-
-  return painel;
-}
-
 function renderPlayer(caminhoArquivo){
   const wrap = document.createElement('div');
   wrap.className = 'player-wrap';
@@ -458,23 +382,14 @@ function renderPlayer(caminhoArquivo){
   caminhoTexto.textContent = caminhoArquivo.join(' / ');
   wrap.appendChild(caminhoTexto);
 
-  // Container flex: coluna do vídeo à esquerda, painel de transcrição à direita
-  const corpo = document.createElement('div');
-  corpo.className = 'player-corpo';
-  wrap.appendChild(corpo);
-
-  const colunaVideo = document.createElement('div');
-  colunaVideo.className = 'player-coluna-video';
-  corpo.appendChild(colunaVideo);
-
   const video = document.createElement('video');
   video.controls = true;
-  colunaVideo.appendChild(video);
+  wrap.appendChild(video);
 
   const loading = document.createElement('div');
   loading.className = 'loading-ts';
   loading.innerHTML = `<span class="spinner"></span><span>Preparando o vídeo (convertendo .ts no navegador)…</span>`;
-  colunaVideo.appendChild(loading);
+  wrap.appendChild(loading);
 
   const fallback = document.createElement('div');
   fallback.className = 'fallback';
@@ -484,9 +399,7 @@ function renderPlayer(caminhoArquivo){
     • Abra o arquivo direto em um player local como <strong>VLC</strong> (funciona sem conversão).<br>
     • Ou tente abrir em uma nova aba: <a href="${src}" target="_blank">${arquivo}</a>.
   `;
-  colunaVideo.appendChild(fallback);
-
-  corpo.appendChild(renderPainelTranscricao(caminhoArquivo));
+  wrap.appendChild(fallback);
 
   // ---------- Controle de "concluída" + retomar de onde parou ----------
   const progAtual = obterProgresso(caminhoArquivo) || {};
@@ -533,12 +446,12 @@ function renderPlayer(caminhoArquivo){
     btnProximo.onclick = () => abrirEpisodio(proximoCaminho);
     controles.appendChild(btnProximo);
   }
-  colunaVideo.appendChild(controles);
+  wrap.appendChild(controles);
 
   // ---------- Auto-avanço pra próxima aula, com contagem regressiva cancelável ----------
   const autoAvanco = document.createElement('div');
   autoAvanco.className = 'auto-avanco';
-  colunaVideo.appendChild(autoAvanco);
+  wrap.appendChild(autoAvanco);
 
   let timerAutoAvanco = null;
   function dispararAutoAvanco(){

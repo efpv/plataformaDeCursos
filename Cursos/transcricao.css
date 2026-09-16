@@ -1,0 +1,51 @@
+/* ---------- Painel de transcrição (adicionar ao CSS existente do projeto) ---------- */
+.player-corpo{
+  display:flex;
+  gap:24px;
+  align-items:flex-start;
+  flex-wrap:wrap; /* empilha em telas estreitas, sem precisar de media query separada */
+}
+.player-coluna-video{
+  flex:2 1 480px;
+  min-width:0; /* evita que o <video> estoure a coluna em telas pequenas */
+}
+.painel-transcricao{
+  flex:1 1 280px;
+  max-height:70vh;
+  overflow-y:auto;
+  background:#12161f;
+  border-radius:10px;
+  padding:16px 18px;
+}
+.transcricao-titulo{
+  font-weight:600;
+  font-size:14px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  color:#9aa4b2;
+  margin-bottom:10px;
+}
+.transcricao-corpo{
+  font-size:14px;
+  line-height:1.7;
+  white-space:pre-wrap;
+  color:#dfe3ea;
+}
+.transcricao-ausente{
+  font-style:italic;
+  color:#7a8494;
+}
+.btn-gerar-transcricao{
+  margin-top:10px;
+  padding:8px 14px;
+  border:1px solid #3a4152;
+  border-radius:6px;
+  background:#1c212e;
+  color:#dfe3ea;
+  font-size:13px;
+  font-style:normal;
+  cursor:pointer;
+}
+.btn-gerar-transcricao:hover{
+  background:#232a3a;
+}

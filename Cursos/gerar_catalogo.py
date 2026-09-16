@@ -1,10 +1,10 @@
 """
 Gera/atualiza o arquivos.json usado pela plataforma Minha Escola.
-Roda a partir da pasta onde está localizado e varre tudo
+Roda a partir da própria pasta raiz (C:\\Cursos) e varre tudo
 recursivamente, montando a árvore de séries > módulos > aulas.
 
-Uso: python gerar_catalogo.py
-(Deve ser executado de dentro da pasta de conteúdo)
+Uso: basta rodar `python gerar_catalogo.py` dentro de C:\\Cursos
+(o start.bat já faz isso automaticamente antes de subir o servidor).
 """
 import json
 import os
